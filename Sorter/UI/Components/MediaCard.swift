@@ -52,7 +52,7 @@ struct MediaCard: View {
         }
         .overlay(alignment: .topLeading) {
             if entry.isMissing {
-                Text("missing").font(Theme.mono(9.5)).foregroundStyle(Theme.secondary)
+                Text("Missing").font(.system(size: 9.5, weight: .medium)).foregroundStyle(Theme.secondary)
                     .padding(.horizontal, 5).padding(.vertical, 2)
                     .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 4))
                     .padding(6)
@@ -64,11 +64,11 @@ struct MediaCard: View {
                     if !entry.note.isEmpty { Circle().fill(Theme.accent).frame(width: 5, height: 5) }
                     Spacer()
                     ForEach(chips) { c in
-                        Text(c.name.uppercased()).font(Theme.mono(9)).foregroundStyle(Theme.secondary).lineLimit(1)
+                        Text(c.name).font(.system(size: 9.5, weight: .medium)).foregroundStyle(Theme.text.opacity(0.85)).lineLimit(1)
                             .padding(.horizontal, 4).padding(.vertical, 2)
                             .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 3))
                     }
-                    if entry.categories.count > 2 { Text("+\(entry.categories.count - 2)").font(Theme.mono(9)).foregroundStyle(Theme.secondary) }
+                    if entry.categories.count > 2 { Text("+\(entry.categories.count - 2)").font(.system(size: 9.5, weight: .medium)).foregroundStyle(Theme.secondary).monospacedDigit() }
                 }
                 .padding(6)
                 .background(LinearGradient(colors: [.clear, .black.opacity(0.75)], startPoint: .top, endPoint: .bottom))

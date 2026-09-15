@@ -6,20 +6,34 @@ struct GridView: View {
     @FocusState private var focused: Bool
     @State private var columns: Int = 5
 
+    // Marquee (drag-select from empty space, like Finder). Visible cells report
+    // their frames in the "grid" space; an NSView under the content catches the
+    // mouse in the gaps (cards keep their own click / file drag-out), so this
+    // doesn't depend on SwiftUI gesture arbitration inside the ScrollView.
+    @State private var frames: [String: CGRect] = [:]
+    @State private var marquee: CGRect? = nil
+    @State private var marqueeBase = Set<String>()
+
     var body: some View {
         GeometryReader { geo in
             ScrollViewReader { proxy in
-                ScrollView { content(height: geo.size.height) }
-                    .onChange(of: model.anchor) { _, a in
-                        if let a { withAnimation(Theme.ease) { proxy.scrollTo(a) } }
-                    }
+                ScrollView {
+                    content(height: geo.size.height)
+                        .coordinateSpace(name: "grid")
+                        .onPreferenceChange(CardFramesKey.self) { frames = $0 }
+                        .background(MarqueeCatcher(onBegin: { p, mods, visibleTop in marqueeBegin(p, mods, width: geo.size.width, visibleTop: visibleTop) },
+                                                   onChange: marqueeChange, onEnd: marqueeEnd,
+                                                   onClick: { model.clearSelection(); focused = true }))
+                        .overlay(alignment: .topLeading) { marqueeOverlay }
+                }
+                .onChange(of: model.anchor) { _, a in
+                    if let a, marquee == nil { withAnimation(Theme.ease) { proxy.scrollTo(a) } }
+                }
             }
             .onChange(of: geo.size.width, initial: true) { _, w in recomputeColumns(width: w) }
             .onChange(of: model.gridSize) { _, _ in recomputeColumns(width: geo.size.width) }
         }
         .background(Theme.bg)
-        .contentShape(Rectangle())
-        .onTapGesture { model.clearSelection(); focused = true }
         .focusable()
         .focusEffectDisabled()
         .focused($focused)
@@ -36,6 +50,41 @@ struct GridView: View {
 
     private func recomputeColumns(width: CGFloat) {
         columns = max(1, Int((width - 24 + 8) / (model.gridSize + 8)))
+    }
+
+    // ── Marquee ───────────────────────────────────────────────────────────
+    private func marqueeBegin(_ p: CGPoint, _ mods: NSEvent.ModifierFlags, width: CGFloat, visibleTop: CGFloat) -> Bool {
+        // Floating inspector + its toggle live in the top-trailing overlay: leave those clicks alone.
+        if model.inspectorOpen && p.x > width - InspectorOverlay.reservedWidth { return false }
+        if p.x > width - 54 && p.y < visibleTop + 54 { return false }
+        if frames.values.contains(where: { $0.contains(p) }) { return false }   // card: its own drag-out
+        marqueeBase = mods.contains(.shift) || mods.contains(.command) ? model.selected : []
+        focused = true
+        return true
+    }
+
+    private func marqueeChange(_ r: CGRect) {
+        marquee = r
+        let hit = Set(frames.filter { $0.value.intersects(r) }.map(\.key))
+        let next = marqueeBase.union(hit)
+        if next != model.selected { model.selected = next }
+    }
+
+    private func marqueeEnd() {
+        marquee = nil
+        if let a = model.anchor, model.selected.contains(a) { return }
+        model.anchor = model.filtered.first { model.selected.contains($0.path) }?.path
+    }
+
+    @ViewBuilder private var marqueeOverlay: some View {
+        if let r = marquee {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Theme.accent.opacity(0.10))
+                .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.accent.opacity(0.6)))
+                .frame(width: r.width, height: r.height)
+                .offset(x: r.minX, y: r.minY)
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder
@@ -61,8 +110,8 @@ private struct EmptyGrid: View {
     var body: some View {
         VStack(spacing: 12) {
             BrandMark(size: 36, color: Theme.muted)
-            Text(hasEntries ? "No images match the filters" : "Drop images, videos or folders · Import · auto-scans BMP's output folder")
-                .font(Theme.mono(11)).tracking(0.8).foregroundStyle(Theme.muted)
+            Text(hasEntries ? "No images match the filters" : "Drop images, videos or folders here, or use Import. BMP's output folder is scanned automatically.")
+                .font(Theme.body(12.5)).foregroundStyle(Theme.secondary).multilineTextAlignment(.center).frame(maxWidth: 360)
         }
     }
 }
@@ -83,9 +132,9 @@ private struct GroupSection: View {
             } label: {
                 HStack(spacing: 10) {
                     Text(group.name.uppercased()).font(.system(size: 11.5, weight: .bold)).tracking(2).foregroundStyle(Theme.text)
-                    Text("\(group.count)").font(Theme.mono(11)).foregroundStyle(Theme.muted).monospacedDigit()
+                    Text("\(group.count)").font(Theme.caption(11.5)).foregroundStyle(Theme.muted).monospacedDigit()
                     if products > 0 {
-                        Text("· \(products) producto\(products == 1 ? "" : "s")").font(Theme.mono(11)).foregroundStyle(Theme.muted.opacity(0.7))
+                        Text("· \(products) producto\(products == 1 ? "" : "s")").font(Theme.caption(11.5)).foregroundStyle(Theme.muted.opacity(0.7)).monospacedDigit()
                     }
                     Rectangle().fill(Theme.hairline).frame(height: 1)
                     Image(systemName: collapsed ? "chevron.right" : "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.muted)
@@ -108,8 +157,8 @@ private struct SubGroupSection: View {
             if sub.catId != nil {
                 HStack(spacing: 6) {
                     Circle().fill(Theme.accent.opacity(0.7)).frame(width: 4, height: 4)
-                    Text(sub.name.uppercased()).font(Theme.mono(10.5)).tracking(1.2).foregroundStyle(Theme.secondary)
-                    Text("\(sub.entries.count)").font(Theme.mono(10.5)).foregroundStyle(Theme.muted.opacity(0.7))
+                    Text(sub.name.uppercased()).font(Theme.label(10.5)).tracking(1.2).foregroundStyle(Theme.secondary)
+                    Text("\(sub.entries.count)").font(Theme.caption(11)).foregroundStyle(Theme.muted.opacity(0.7)).monospacedDigit()
                     Rectangle().fill(Theme.hairline.opacity(0.5)).frame(height: 1)
                 }
             }
@@ -144,6 +193,83 @@ private struct CardCell: View {
                 model.click(entry.path, command: f.contains(.command), shift: f.contains(.shift))
             }
             .contextMenu { CardMenu(entry: entry) }
+            .background(GeometryReader { g in
+                Color.clear.preference(key: CardFramesKey.self, value: [entry.path: g.frame(in: .named("grid"))])
+            })
+    }
+}
+
+// Mouse catcher for the gaps between cards. Sits in the content's background, so
+// its coordinates are the "grid" space (flipped to match SwiftUI's top-left origin).
+// The hosting view keeps mouseDown for itself (the grid is .focusable for key
+// triage), so instead of relying on responder dispatch this watches the window's
+// mouse events with a local monitor and claims the ones that land in a gap.
+struct MarqueeCatcher: NSViewRepresentable {
+    var onBegin: (CGPoint, NSEvent.ModifierFlags, CGFloat) -> Bool   // point, modifiers, visible top (content coords)
+    var onChange: (CGRect) -> Void
+    var onEnd: () -> Void
+    var onClick: () -> Void
+
+    func makeNSView(context: Context) -> CatcherView { let v = CatcherView(); update(v); return v }
+    func updateNSView(_ v: CatcherView, context: Context) { update(v) }
+    private func update(_ v: CatcherView) { v.onBegin = onBegin; v.onChange = onChange; v.onEnd = onEnd; v.onClick = onClick }
+
+    final class CatcherView: NSView {
+        var onBegin: ((CGPoint, NSEvent.ModifierFlags, CGFloat) -> Bool)?
+        var onChange: ((CGRect) -> Void)?
+        var onEnd: (() -> Void)?
+        var onClick: (() -> Void)?
+        private var start: CGPoint?
+        private var dragging = false
+        private var monitor: Any?
+
+        override var isFlipped: Bool { true }
+        override var acceptsFirstResponder: Bool { false }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let monitor { NSEvent.removeMonitor(monitor); self.monitor = nil }
+            guard window != nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) { [weak self] e in
+                guard let self, e.window === self.window else { return e }
+                return self.handle(e) ? nil : e
+            }
+        }
+        deinit { if let monitor { NSEvent.removeMonitor(monitor) } }
+
+        /// Returns true when the event was consumed by the marquee.
+        private func handle(_ e: NSEvent) -> Bool {
+            let p = convert(e.locationInWindow, from: nil)
+            switch e.type {
+            case .leftMouseDown:
+                // The scroll view runs under the transparent title bar: only claim
+                // clicks inside the window's content layout area and our visible rect.
+                guard e.clickCount == 1, let win = window, win.contentLayoutRect.contains(e.locationInWindow),
+                      visibleRect.contains(p), onBegin?(p, e.modifierFlags, visibleRect.minY) == true else { start = nil; return false }
+                start = p; dragging = false
+                return true
+            case .leftMouseDragged:
+                guard let s = start else { return false }
+                if !dragging && hypot(p.x - s.x, p.y - s.y) < 4 { return true }
+                dragging = true
+                onChange?(CGRect(x: min(s.x, p.x), y: min(s.y, p.y), width: abs(p.x - s.x), height: abs(p.y - s.y)))
+                return true
+            case .leftMouseUp:
+                guard start != nil else { return false }
+                dragging ? onEnd?() : onClick?()
+                start = nil; dragging = false
+                return true
+            default:
+                return false
+            }
+        }
+    }
+}
+
+struct CardFramesKey: PreferenceKey {
+    static var defaultValue: [String: CGRect] = [:]
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
 

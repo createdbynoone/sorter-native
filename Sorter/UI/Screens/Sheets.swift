@@ -27,7 +27,7 @@ struct ExportSheet: View {
                             RoundedRectangle(cornerRadius: 2).strokeBorder(Theme.hairlineStrong)
                                 .frame(width: s.w == s.h ? 14 : 9, height: 14)
                             Text(s.name).font(.system(size: 12.5, weight: .medium))
-                            Text(s.label).font(Theme.mono(11)).foregroundStyle(Theme.muted)
+                            Text(s.label).font(Theme.caption(11.5)).foregroundStyle(Theme.muted).monospacedDigit()
                         }
                     }
                     .toggleStyle(.checkbox)
@@ -35,7 +35,7 @@ struct ExportSheet: View {
             }
 
             if let result {
-                Text(result).font(Theme.mono(11)).foregroundStyle(failed ? Theme.danger : Theme.ok)
+                Text(result).font(Theme.body(12)).foregroundStyle(failed ? Theme.danger : Theme.ok)
             }
 
             HStack {

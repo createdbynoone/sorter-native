@@ -30,7 +30,7 @@ final class AppModel {
 
     private var watcher: FolderWatcher?
 
-    var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—" }
+    var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?" }
     var entries: [String: MediaEntry] { store.db.entries }
     var categories: [String: Category] { store.db.categories }
     var anchorEntry: MediaEntry? { anchor.flatMap { entries[$0] } }

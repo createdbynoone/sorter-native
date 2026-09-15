@@ -53,11 +53,11 @@ private struct InspectorContent: View {
                         if !info.isEmpty { Text("·"); Text(info) }
                         if entry.isVideo { Text("·"); Text("VIDEO") }
                     }
-                    .font(Theme.mono(10.5)).foregroundStyle(Theme.muted)
+                    .font(Theme.caption(11)).foregroundStyle(Theme.muted).monospacedDigit()
                     HStack(spacing: 6) {
                         Button("Reveal") { model.reveal(entry.path) }.help("Reveal in Finder  R")
                         Button("Open") { model.open(entry.path) }
-                        if entry.isMissing { Text("missing").font(Theme.mono(10)).foregroundStyle(Theme.warn) }
+                        if entry.isMissing { Text("Missing").font(Theme.caption(11)).foregroundStyle(Theme.warn) }
                     }
                     .controlSize(.small)
                     .padding(.top, 4)
@@ -118,14 +118,13 @@ private struct InspectorContent: View {
                             if addingSubFor == p { newField(parent: p) }
                         }
                         if subs.isEmpty && addingSubFor != p {
-                            Text("Sin productos — agrega uno con +").font(Theme.mono(10.5)).foregroundStyle(Theme.muted)
+                            Text("Sin productos. Agrega uno con +").font(Theme.caption(11)).foregroundStyle(Theme.muted)
                         }
                     }
                 }
             }
             .padding(14)
         }
-        .background(Theme.surface)
         .task(id: entry.path) {
             note = entry.note
             info = ""
@@ -150,7 +149,7 @@ private struct InspectorContent: View {
     private func chip(_ c: Category, active: Bool, muted: Bool) -> some View {
         if renaming?.id == c.id {
             TextField("", text: $renameValue)
-                .textFieldStyle(.plain).font(Theme.mono(11))
+                .textFieldStyle(.plain).font(Theme.body(11.5))
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Theme.bg, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.hairlineStrong))
@@ -160,7 +159,7 @@ private struct InspectorContent: View {
         } else {
             Button { model.toggleCategory(entry.path, c.id) } label: {
                 Text(c.name)
-                    .font(Theme.mono(11))
+                    .font(Theme.medium(11.5))
                     .foregroundStyle(active ? Theme.accent : Theme.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).fill(active ? Theme.accent.opacity(muted ? 0.08 : 0.12) : .clear))
@@ -176,7 +175,7 @@ private struct InspectorContent: View {
 
     private func newField(parent: String?) -> some View {
         TextField(parent == nil ? "New category…" : "New product…", text: $newName)
-            .textFieldStyle(.plain).font(Theme.mono(11))
+            .textFieldStyle(.plain).font(Theme.body(11.5))
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(Theme.bg, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
             .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Theme.hairlineStrong))
@@ -198,8 +197,8 @@ struct StatusPill: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: status.symbol).font(.system(size: 8.5, weight: .bold))
-                Text(status.label).font(Theme.mono(11))
-                Text(status.key).font(Theme.mono(9)).opacity(0.5)
+                Text(status.label).font(Theme.medium(11.5))
+                Text(status.key).font(.system(size: 9, weight: .semibold)).opacity(0.5)
             }
             .foregroundStyle(active ? status.color : Theme.secondary)
             .padding(.horizontal, 8).padding(.vertical, 4)

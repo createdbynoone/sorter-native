@@ -30,15 +30,11 @@ struct FocusView: View {
                     }
                 }
                 .clipped()
+                .overlay(alignment: .topTrailing) { InspectorOverlay(entry: entry) }
                 Divider()
                 bottomBar
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if model.inspectorOpen, let entry {
-                Divider()
-                InspectorView(entry: entry, focusNote: model.focusNote).frame(width: 270)
-            }
         }
         .background(Theme.bg)
         .focusable().focusEffectDisabled().focused($focused)
@@ -141,7 +137,7 @@ struct FocusView: View {
             }
             Spacer()
             if let i = model.focusIndex {
-                Text("\(i + 1) / \(model.filtered.count)").font(Theme.mono(11)).foregroundStyle(Theme.muted).monospacedDigit()
+                Text("\(i + 1) of \(model.filtered.count)").font(Theme.caption(11.5)).foregroundStyle(Theme.muted).monospacedDigit()
             }
             HStack(spacing: 2) {
                 Button { model.focusNavigate(-1) } label: { Image(systemName: "chevron.left") }.disabled((model.focusIndex ?? 0) <= 0)
@@ -165,8 +161,8 @@ struct FocusView: View {
                 StatusPill(status: s, active: entry?.status == s) { model.focusStatus(s) }
             }
             Spacer()
-            if zoom != 1 { Text("\(Int(zoom * 100))%").font(Theme.mono(10.5)).foregroundStyle(Theme.muted).monospacedDigit() }
-            Text("← → navigate · K M D A U status · N note · E export").font(Theme.mono(10)).foregroundStyle(Theme.muted)
+            if zoom != 1 { Text("\(Int(zoom * 100))%").font(Theme.caption(11)).foregroundStyle(Theme.muted).monospacedDigit() }
+            Text("← → navigate   K M D A U status   N note   E export").font(Theme.caption(11)).foregroundStyle(Theme.muted)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(.bar)

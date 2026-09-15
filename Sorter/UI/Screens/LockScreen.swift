@@ -59,7 +59,7 @@ struct LockScreen: View {
                     else if error { Text("Wrong key").foregroundStyle(Theme.danger) }
                     else { Text(" ") }
                 }
-                .font(Theme.mono(11))
+                .font(Theme.caption(11))
             }
             .frame(width: 280)
         }

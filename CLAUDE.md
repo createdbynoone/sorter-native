@@ -20,10 +20,11 @@ Sorter/UI/        Theme, Components (Logo/Splash, MediaCard, GridView, Inspector
 - Lock: PBKDF2-SHA512 200k iter, misma passphrase, salt/hash propios en `Lock.swift`.
 
 ## Comportamiento
+- Tipografía: SF Pro para toda la UI (jerarquía por peso/color); SF Mono solo para datos reales (rutas, nombres de archivo); números en prosa con `.monospacedDigit()`; `Theme.caption` para metadata. Sin guiones largos en cadenas visibles.
 - Grid `LazyVGrid` adaptativo (120–400 px, `[` `]`), agrupado por categoría → producto solo en **All** sin búsqueda; headers colapsables.
-- Selección: click / ⌘click / ⇧click (rango desde el anchor), ⌘A, Esc. Sin marquee (drag-select) — pendiente.
+- Selección: click / ⌘click / ⇧click (rango desde el anchor), ⌘A, Esc. **Marquee** (drag-select desde un hueco del grid, ⇧/⌘ suma a la selección): `MarqueeCatcher` en `GridView` es un `NSView` bajo el contenido con un `NSEvent.addLocalMonitorForEvents` — el `NSHostingView` se queda los `mouseDown` porque el grid es `.focusable()`, así que no sirve `DragGesture` ni el responder chain. Excluye toolbar (`window.contentLayoutRect`), cards (frames vía `CardFramesKey`) y el overlay del inspector (`InspectorOverlay.reservedWidth`).
 - Teclas con el grid enfocado: K M D U A (status, aplica a toda la selección), F/↩ focus, N nota, R reveal, I inspector, flechas navegan.
-- **Inspector nativo** (`.inspector`) con estado, nota (autosave 400 ms), categoría + producto (radio en cada nivel, `+` para crear, click derecho renombrar/borrar).
+- **Inspector flotante** (`InspectorOverlay`, overlay top-trailing sobre grid y focus, como Electron): panel casi opaco (`Theme.surface` 94 % sobre `.thinMaterial`, sin glass — el glass dejaba sangrar las imágenes) + botón flotante para contraer/expandir. Estado, nota (autosave 400 ms), categoría + producto (radio en cada nivel, `+` para crear, click derecho renombrar/borrar).
 - **Focus**: imagen con zoom (rueda, pinch, doble click) y pan; video con `VideoPlayer`; ← → espacio navegan; status auto-avanza; E exporta.
 - Drag-out nativo desde una card entrega el archivo ORIGINAL (`.onDrag` con la URL) a Finder/BMP.
 - Drop de archivos/carpetas al grid → `importPaths` (copia a library si no están en la carpeta vigilada).

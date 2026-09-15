@@ -10,11 +10,7 @@ struct MainView: View {
                 FocusView().transition(.opacity)
             } else {
                 GridView()
-                    .inspector(isPresented: $m.inspectorOpen) {
-                        InspectorView(entry: model.anchorEntry, focusNote: model.focusNote)
-                            .inspectorColumnWidth(min: 240, ideal: 270, max: 340)
-                            .onChange(of: model.inspectorOpen) { _, _ in model.savePrefs() }
-                    }
+                    .overlay(alignment: .topTrailing) { InspectorOverlay(entry: model.anchorEntry) }
             }
         }
         .animation(Theme.ease, value: model.focusIndex == nil)
@@ -86,10 +82,10 @@ struct FooterBar: View {
             if let n = c[.archived], n > 0 { Text("· ⬒ \(n) archived").foregroundStyle(Theme.info.opacity(0.8)) }
             if model.selected.count > 1 { Text("· \(model.selected.count) selected").foregroundStyle(Theme.text) }
             Spacer()
-            Text((model.watchPath as NSString).abbreviatingWithTildeInPath).foregroundStyle(Theme.muted).lineLimit(1).truncationMode(.middle)
-            Text("Sorter v\(model.version)").foregroundStyle(Theme.muted)
+            Text((model.watchPath as NSString).abbreviatingWithTildeInPath).font(Theme.mono(10.5)).foregroundStyle(Theme.muted).lineLimit(1).truncationMode(.middle)
+            Text("v\(model.version)").foregroundStyle(Theme.muted)
         }
-        .font(Theme.mono(10.5)).monospacedDigit()
+        .font(Theme.caption(11)).monospacedDigit()
         .padding(.horizontal, 14).padding(.vertical, 6)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
