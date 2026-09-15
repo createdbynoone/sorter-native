@@ -1,0 +1,49 @@
+name: Sorter
+options:
+  bundleIdPrefix: com.brotherhood
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  xcodeVersion: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "2.0.1"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    SWIFT_STRICT_CONCURRENCY: minimal
+    DEAD_CODE_STRIPPING: YES
+targets:
+  Sorter:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sorter
+    info:
+      path: Sorter/Resources/Info.plist
+      properties:
+        CFBundleName: Sorter
+        CFBundleDisplayName: Sorter
+        CFBundleIdentifier: com.brotherhood.sorter.native
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "Brotherhood"
+        LSApplicationCategoryType: public.app-category.graphics-design
+        NSHighResolutionCapable: true
+        NSSupportsAutomaticTermination: false
+        NSSupportsSuddenTermination: false
+    entitlements:
+      path: Sorter/Resources/Sorter.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.brotherhood.sorter.native
+        PRODUCT_NAME: Sorter
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_EMIT_LOC_STRINGS: NO
