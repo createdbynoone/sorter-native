@@ -11,7 +11,7 @@ struct InspectorView: View {
         } else {
             VStack(spacing: 10) {
                 BrandMark(size: 28, color: Theme.muted)
-                Text("Select an image to inspect").font(Theme.body(12)).foregroundStyle(Theme.muted)
+                Text("Select an image to inspect").font(Theme.body(12)).foregroundStyle(Theme.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -53,7 +53,7 @@ private struct InspectorContent: View {
                         if !info.isEmpty { Text("·"); Text(info) }
                         if entry.isVideo { Text("·"); Text("VIDEO") }
                     }
-                    .font(Theme.caption(11)).foregroundStyle(Theme.muted).monospacedDigit()
+                    .font(Theme.caption(11)).foregroundStyle(Theme.secondary).monospacedDigit()
                     HStack(spacing: 6) {
                         Button("Reveal") { model.reveal(entry.path) }.help("Reveal in Finder  R")
                         Button("Open") { model.open(entry.path) }
@@ -83,11 +83,11 @@ private struct InspectorContent: View {
                         .scrollContentBackground(.hidden)
                         .frame(minHeight: 70)
                         .padding(6)
-                        .background(Theme.bg, in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(noteFocused ? Theme.hairlineStrong : Theme.hairline))
+                        .background(Theme.bg.opacity(0.55), in: RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(noteFocused ? Theme.text.opacity(0.3) : Theme.hairlineStrong))
                         .focused($noteFocused)
                         .overlay(alignment: .topLeading) {
-                            if note.isEmpty { Text("Anotar cambios, ideas…").font(Theme.body(12.5)).foregroundStyle(Theme.muted).padding(11).allowsHitTesting(false) }
+                            if note.isEmpty { Text("Anotar cambios, ideas…").font(Theme.body(12.5)).foregroundStyle(Theme.secondary).padding(11).allowsHitTesting(false) }
                         }
                 }
 
@@ -118,7 +118,7 @@ private struct InspectorContent: View {
                             if addingSubFor == p { newField(parent: p) }
                         }
                         if subs.isEmpty && addingSubFor != p {
-                            Text("Sin productos. Agrega uno con +").font(Theme.caption(11)).foregroundStyle(Theme.muted)
+                            Text("Sin productos. Agrega uno con +").font(Theme.caption(11)).foregroundStyle(Theme.secondary)
                         }
                     }
                 }
@@ -160,10 +160,10 @@ private struct InspectorContent: View {
             Button { model.toggleCategory(entry.path, c.id) } label: {
                 Text(c.name)
                     .font(Theme.medium(11.5))
-                    .foregroundStyle(active ? Theme.accent : Theme.secondary)
+                    .foregroundStyle(active ? Theme.accent : Theme.text.opacity(0.85))
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).fill(active ? Theme.accent.opacity(muted ? 0.08 : 0.12) : .clear))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(active ? Theme.accent.opacity(0.5) : Theme.hairline))
+                    .background(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).fill(active ? Theme.accent.opacity(muted ? 0.12 : 0.16) : Theme.bg.opacity(0.35)))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(active ? Theme.accent.opacity(0.55) : Theme.hairlineStrong))
             }
             .buttonStyle(.plain)
             .contextMenu {
@@ -200,10 +200,10 @@ struct StatusPill: View {
                 Text(status.label).font(Theme.medium(11.5))
                 Text(status.key).font(.system(size: 9, weight: .semibold)).opacity(0.5)
             }
-            .foregroundStyle(active ? status.color : Theme.secondary)
+            .foregroundStyle(active ? status.color : Theme.text.opacity(0.85))
             .padding(.horizontal, 8).padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).fill(active ? status.color.opacity(0.12) : .clear))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(active ? status.color.opacity(0.55) : Theme.hairline))
+            .background(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).fill(active ? status.color.opacity(0.16) : Theme.bg.opacity(0.35)))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall, style: .continuous).strokeBorder(active ? status.color.opacity(0.6) : Theme.hairlineStrong))
         }
         .buttonStyle(.plain)
     }

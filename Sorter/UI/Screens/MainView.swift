@@ -10,7 +10,7 @@ struct MainView: View {
                 FocusView().transition(.opacity)
             } else {
                 GridView()
-                    .overlay(alignment: .topTrailing) { InspectorOverlay(entry: model.anchorEntry) }
+                    .overlay { InspectorOverlay(entry: model.anchorEntry) }
             }
         }
         .animation(Theme.ease, value: model.focusIndex == nil)

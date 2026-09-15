@@ -21,7 +21,7 @@ struct GridView: View {
                     content(height: geo.size.height)
                         .coordinateSpace(name: "grid")
                         .onPreferenceChange(CardFramesKey.self) { frames = $0 }
-                        .background(MarqueeCatcher(onBegin: { p, mods, visibleTop in marqueeBegin(p, mods, width: geo.size.width, visibleTop: visibleTop) },
+                        .background(MarqueeCatcher(onBegin: { p, mods, visible in marqueeBegin(p, mods, width: geo.size.width, visible: visible) },
                                                    onChange: marqueeChange, onEnd: marqueeEnd,
                                                    onClick: { model.clearSelection(); focused = true }))
                         .overlay(alignment: .topLeading) { marqueeOverlay }
@@ -53,10 +53,10 @@ struct GridView: View {
     }
 
     // ── Marquee ───────────────────────────────────────────────────────────
-    private func marqueeBegin(_ p: CGPoint, _ mods: NSEvent.ModifierFlags, width: CGFloat, visibleTop: CGFloat) -> Bool {
-        // Floating inspector + its toggle live in the top-trailing overlay: leave those clicks alone.
+    private func marqueeBegin(_ p: CGPoint, _ mods: NSEvent.ModifierFlags, width: CGFloat, visible: CGRect) -> Bool {
+        // Floating inspector + its toggle live in the trailing overlay: leave those clicks alone.
         if model.inspectorOpen && p.x > width - InspectorOverlay.reservedWidth { return false }
-        if p.x > width - 54 && p.y < visibleTop + 54 { return false }
+        if p.x > width - InspectorOverlay.toggleReserved && abs(p.y - visible.midY) < InspectorOverlay.toggleSize / 2 + 4 { return false }
         if frames.values.contains(where: { $0.contains(p) }) { return false }   // card: its own drag-out
         marqueeBase = mods.contains(.shift) || mods.contains(.command) ? model.selected : []
         focused = true
@@ -205,7 +205,7 @@ private struct CardCell: View {
 // triage), so instead of relying on responder dispatch this watches the window's
 // mouse events with a local monitor and claims the ones that land in a gap.
 struct MarqueeCatcher: NSViewRepresentable {
-    var onBegin: (CGPoint, NSEvent.ModifierFlags, CGFloat) -> Bool   // point, modifiers, visible top (content coords)
+    var onBegin: (CGPoint, NSEvent.ModifierFlags, CGRect) -> Bool   // point, modifiers, visible rect (content coords)
     var onChange: (CGRect) -> Void
     var onEnd: () -> Void
     var onClick: () -> Void
@@ -215,7 +215,7 @@ struct MarqueeCatcher: NSViewRepresentable {
     private func update(_ v: CatcherView) { v.onBegin = onBegin; v.onChange = onChange; v.onEnd = onEnd; v.onClick = onClick }
 
     final class CatcherView: NSView {
-        var onBegin: ((CGPoint, NSEvent.ModifierFlags, CGFloat) -> Bool)?
+        var onBegin: ((CGPoint, NSEvent.ModifierFlags, CGRect) -> Bool)?
         var onChange: ((CGRect) -> Void)?
         var onEnd: (() -> Void)?
         var onClick: (() -> Void)?
@@ -245,7 +245,7 @@ struct MarqueeCatcher: NSViewRepresentable {
                 // The scroll view runs under the transparent title bar: only claim
                 // clicks inside the window's content layout area and our visible rect.
                 guard e.clickCount == 1, let win = window, win.contentLayoutRect.contains(e.locationInWindow),
-                      visibleRect.contains(p), onBegin?(p, e.modifierFlags, visibleRect.minY) == true else { start = nil; return false }
+                      visibleRect.contains(p), onBegin?(p, e.modifierFlags, visibleRect) == true else { start = nil; return false }
                 start = p; dragging = false
                 return true
             case .leftMouseDragged:

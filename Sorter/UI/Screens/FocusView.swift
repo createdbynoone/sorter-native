@@ -30,7 +30,7 @@ struct FocusView: View {
                     }
                 }
                 .clipped()
-                .overlay(alignment: .topTrailing) { InspectorOverlay(entry: entry) }
+                .overlay { InspectorOverlay(entry: entry) }
                 Divider()
                 bottomBar
             }

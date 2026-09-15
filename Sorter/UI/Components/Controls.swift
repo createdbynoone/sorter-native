@@ -5,51 +5,76 @@ import AppKit
 // the entire view graph re-rendering at display rate for as long as it runs
 // (measured ~45 % CPU on an idle grid); a CABasicAnimation on a layer costs the
 // main thread nothing — the render server does the fading.
-// Floating inspector, like the Electron build: a panel over the content (never
-// pushes the grid) plus a floating toggle to collapse / expand it. The surface is
-// near-opaque so images never bleed through the text.
+// Floating inspector, mirroring the Electron build: a rounded Liquid Glass card
+// inset from the edges that slides in over the content (never reflows it), and a
+// 40pt round toggle centered vertically that slides along with it.
 struct InspectorOverlay: View {
     @Environment(AppModel.self) private var model
     let entry: MediaEntry?
     static let panelWidth: CGFloat = 280
-    static let reservedWidth: CGFloat = panelWidth + 12 + 8 + 30   // panel + gaps + toggle button
+    static let panelInset: CGFloat = 12
+    static let toggleSize: CGFloat = 40
+    static let toggleInset: CGFloat = 8
+    private static let panelShape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+    /// Trailing strip the marquee must leave alone while the panel is open.
+    static let reservedWidth: CGFloat = panelWidth + panelInset + toggleInset + toggleSize + 8
+    /// Same, for the toggle alone while the panel is closed.
+    static let toggleReserved: CGFloat = toggleInset + toggleSize + 8
 
-    private static let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+    @State private var hover = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Button { model.inspectorOpen.toggle(); model.savePrefs() } label: {
-                Image(systemName: model.inspectorOpen ? "chevron.right" : "sidebar.trailing")
-                    .font(.system(size: 11, weight: .semibold))
-                    .frame(width: 30, height: 30)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.secondary)
-            .background(surface(in: Circle()))
-            .help(model.inspectorOpen ? "Hide inspector  I" : "Show inspector  I")
-
+        ZStack(alignment: .trailing) {
             if model.inspectorOpen {
                 InspectorView(entry: entry, focusNote: model.focusNote)
                     .frame(width: Self.panelWidth)
                     .frame(maxHeight: .infinity)
-                    .background(surface(in: Self.shape))
-                    .clipShape(Self.shape)
+                    .background(GlassSurface(shape: Self.panelShape))
+                    .clipShape(Self.panelShape)
+                    .shadow(color: .black.opacity(0.3), radius: 28, y: 10)
+                    .padding(Self.panelInset)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
+            toggle
+                .padding(.trailing, model.inspectorOpen ? Self.panelWidth + Self.panelInset + Self.toggleInset : Self.toggleInset)
         }
-        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
         .animation(Theme.ease, value: model.inspectorOpen)
     }
 
-    // Near-opaque surface (the "inactive window" look, always): a thin material
-    // for edge vibrancy under a 94 % Theme.surface fill, so the images behind never
-    // bleed into the panel's text.
-    private func surface<S: InsettableShape>(in shape: S) -> some View {
-        shape.fill(Theme.surface.opacity(0.94))
-            .background(.thinMaterial, in: shape)
-            .overlay(shape.strokeBorder(Theme.hairlineStrong))
-            .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
+    private var toggle: some View {
+        Button { model.inspectorOpen.toggle(); model.savePrefs() } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 11, weight: .semibold))
+                .rotationEffect(.degrees(model.inspectorOpen ? 180 : 0))
+                .foregroundStyle(hover ? Theme.text : Theme.secondary)
+                .frame(width: Self.toggleSize, height: Self.toggleSize)
+                .background(GlassSurface(shape: Circle(), interactive: true))
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+        .animation(Theme.ease, value: hover)
+        .help(model.inspectorOpen ? "Hide inspector  I" : "Show inspector  I")
+    }
+}
+
+// Native Liquid Glass on macOS 26+. A medium Theme.surface tint keeps the system
+// refraction and transparency but stops photos from washing out the panel's text;
+// `interactive` adds the press/hover response for controls. Below 26 it falls
+// back to a translucent material.
+struct GlassSurface<S: Shape>: View {
+    let shape: S
+    var interactive = false
+    var tint: Double = 0.55
+    var body: some View {
+        if #available(macOS 26, *) {
+            let glass = Glass.regular.tint(Theme.surface.opacity(tint))
+            Color.clear.glassEffect(interactive ? glass.interactive() : glass, in: shape)
+        } else {
+            shape.fill(Theme.surface.opacity(0.55)).background(.thinMaterial, in: shape)
+        }
     }
 }
 
